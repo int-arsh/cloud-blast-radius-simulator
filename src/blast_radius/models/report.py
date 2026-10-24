@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from blast_radius.models.graph import DependencyEdge, ResourceNode
 from blast_radius.models.impact import ImpactAnalysisReport
 from blast_radius.models.risk import (
     DecisionStatus,
@@ -37,6 +38,12 @@ class FullAnalysisReport(BaseModel):
         default_factory=dict, description="Breakdown of findings by severity level"
     )
     impact_summary: ImpactAnalysisReport = Field(..., description="Downstream impact assessment")
+    nodes: list[ResourceNode] = Field(
+        default_factory=list, description="Topology graph resource nodes"
+    )
+    edges: list[DependencyEdge] = Field(
+        default_factory=list, description="Topology graph directed dependency edges"
+    )
     findings: list[RiskFinding] = Field(
         default_factory=list, description="All detected evidence-backed risk findings"
     )

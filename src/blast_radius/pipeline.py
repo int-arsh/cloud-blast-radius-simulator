@@ -116,6 +116,8 @@ class BlastRadiusPipeline:
             dependency_counts=dependency_counts,
             severity_counts=evaluation.severity_counts,
             impact_summary=impact_report,
+            nodes=graph.get_all_nodes(),
+            edges=graph.get_all_edges(),
             findings=evaluation.findings,
             warnings=all_warnings,
             remediations=unique_remediations,

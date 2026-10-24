@@ -172,6 +172,23 @@ class DependencyGraph:
             missing_dependencies=sorted(self._missing_dependencies),
         )
 
+    def get_all_nodes(self) -> list[ResourceNode]:
+        """Return all ResourceNode objects present in the graph."""
+        nodes: list[ResourceNode] = []
+        for _, data in sorted(self._graph.nodes(data=True), key=lambda x: str(x[0])):
+            if "data" in data and isinstance(data["data"], ResourceNode):
+                nodes.append(data["data"])
+        return nodes
+
+    def get_all_edges(self) -> list[DependencyEdge]:
+        """Return all DependencyEdge objects present in the graph."""
+        edges: list[DependencyEdge] = []
+        sorted_edges = sorted(self._graph.edges(data=True), key=lambda x: (str(x[0]), str(x[1])))
+        for _u, _v, data in sorted_edges:
+            if "data" in data and isinstance(data["data"], DependencyEdge):
+                edges.append(data["data"])
+        return edges
+
     @classmethod
     def from_parsed_plan(
         cls,
