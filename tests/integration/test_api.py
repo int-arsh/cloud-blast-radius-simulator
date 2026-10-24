@@ -125,3 +125,32 @@ def test_api_malformed_plan_returns_incomplete_status(client: TestClient):
     data = response.json()
     assert data["decision_status"] == "analysis_incomplete"
     assert len(data["warnings"]) > 0
+
+
+def test_api_analyze_with_enrich_aws(client: TestClient):
+    """Verify POST /api/v1/analyze?enrich_aws=true returns cloud_enrichment block."""
+    plan_bytes = (FIXTURES_DIR / "add_resource.json").read_bytes()
+    response = client.post(
+        "/api/v1/analyze?enrich_aws=true",
+        content=plan_bytes,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+    assert data["cloud_enrichment"] is not None
+    assert data["cloud_enrichment"]["provider"] == "aws"
+    assert data["cloud_enrichment"]["resources_checked"] >= 1
+
+
+def test_api_export_with_enrich_aws(client: TestClient):
+    """Verify POST /api/v1/analyze/export?enrich_aws=true returns markdown with cloud section."""
+    plan_bytes = (FIXTURES_DIR / "add_resource.json").read_bytes()
+    response = client.post(
+        "/api/v1/analyze/export?format=markdown&enrich_aws=true",
+        content=plan_bytes,
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert "Live Cloud State & Safeguards (Read-Only)" in response.text

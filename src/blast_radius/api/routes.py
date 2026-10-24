@@ -5,6 +5,7 @@ from typing import Any, Literal
 from fastapi import APIRouter, File, HTTPException, Query, Request, UploadFile, status
 from fastapi.responses import PlainTextResponse
 
+from blast_radius.cloud.client import CloudEnricher
 from blast_radius.config import get_settings
 from blast_radius.models.report import FullAnalysisReport
 from blast_radius.pipeline import BlastRadiusPipeline
@@ -26,6 +27,9 @@ async def analyze_plan(
     file: UploadFile | None = File(None, description="Terraform plan JSON file upload"),
     critical_resources: list[str] = Query(
         default=[], description="List of resource addresses designated as critical"
+    ),
+    enrich_aws: bool = Query(
+        default=False, description="Enrich with live AWS cloud state (strictly read-only)"
     ),
 ) -> FullAnalysisReport:
     """Analyze Terraform plan JSON uploaded as multipart file or raw JSON body."""
@@ -52,7 +56,8 @@ async def analyze_plan(
         )
 
     crit_set = set(critical_resources) if critical_resources else None
-    report = pipeline.run_analysis(content, critical_resources=crit_set)
+    enricher = CloudEnricher() if enrich_aws else None
+    report = pipeline.run_analysis(content, critical_resources=crit_set, cloud_enricher=enricher)
     return report
 
 
@@ -64,6 +69,9 @@ async def analyze_plan(
 async def export_report(
     request: Request,
     format: Literal["markdown", "json"] = Query("markdown", description="Desired export format"),
+    enrich_aws: bool = Query(
+        default=False, description="Enrich with live AWS cloud state (strictly read-only)"
+    ),
     file: UploadFile | None = File(None),
 ) -> Any:
     """Export analysis result in Markdown or JSON format."""
@@ -86,7 +94,8 @@ async def export_report(
             detail=f"Plan payload exceeds maximum limit of {settings.max_plan_size_bytes} bytes.",
         )
 
-    report = pipeline.run_analysis(content)
+    enricher = CloudEnricher() if enrich_aws else None
+    report = pipeline.run_analysis(content, cloud_enricher=enricher)
 
     if format == "json":
         return JsonReporter.generate_dict(report)

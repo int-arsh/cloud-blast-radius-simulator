@@ -147,3 +147,13 @@ def test_cli_stdin_input(monkeypatch, capsys):
     assert code == EXIT_SUCCESS
     captured = capsys.readouterr()
     assert "[ PASS ]" in captured.out
+
+
+def test_cli_enrich_aws_flag(capsys):
+    """Verify --enrich-aws flag includes live cloud inspection output."""
+    plan_file = str(FIXTURES_DIR / "add_resource.json")
+    code = run_cli(["analyze", plan_file, "--enrich-aws", "--aws-region=us-east-1"])
+    assert code == EXIT_SUCCESS
+    captured = capsys.readouterr()
+    assert "Live AWS Cloud" in captured.out
+    assert "Resources Checked" in captured.out

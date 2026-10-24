@@ -93,6 +93,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Path to file where report should be written (e.g. pr-comment.md).",
     )
     analyze_parser.add_argument(
+        "--enrich-aws",
+        action="store_true",
+        help="Enrich plan analysis with live AWS cloud state (strictly read-only).",
+    )
+    analyze_parser.add_argument(
+        "--aws-profile",
+        type=str,
+        default=None,
+        help="AWS profile name for live cloud authentication.",
+    )
+    analyze_parser.add_argument(
+        "--aws-region",
+        type=str,
+        default=None,
+        help="AWS region for live cloud inspection (e.g. us-east-1).",
+    )
+    analyze_parser.add_argument(
         "-q",
         "--quiet",
         action="store_true",
@@ -157,6 +174,25 @@ def format_summary(report) -> str:
         lines.append(_color(" Clean Plan: Zero safety rule violations detected.", "1;32"))
         lines.append("-" * 72)
 
+    if report.cloud_enrichment:
+        ce = report.cloud_enrichment
+        auth_status = "Authenticated" if ce.authenticated else "Offline / Simulation"
+        lines.append(f" Live AWS Cloud    : {auth_status} (Region: {ce.region or 'us-east-1'})")
+        lines.append(
+            f" Resources Checked : {ce.resources_checked} "
+            f"(Exist: {ce.resources_existing}, Missing: {ce.resources_missing}, "
+            f"Drift: {ce.drift_count})"
+        )
+        if ce.protection_warnings:
+            lines.append(" Active Safeguards :")
+            for pw in ce.protection_warnings:
+                lines.append(f"   {_color('[SAFEGUARD]', '1;33')} {pw}")
+        if ce.production_violations:
+            lines.append(" Production Violations:")
+            for pv in ce.production_violations:
+                lines.append(f"   {_color('[PROD-VIOLATION]', '1;31')} {pv}")
+        lines.append("-" * 72)
+
     return "\n".join(lines)
 
 
@@ -201,11 +237,22 @@ def run_cli(args: Sequence[str] | None = None) -> int:
                 if part_clean:
                     critical_set.add(part_clean)
 
-        # 3. Execute Analysis Pipeline
+        # 3. Initialize Cloud Enricher if requested
+        cloud_enricher = None
+        if parsed.enrich_aws:
+            from blast_radius.cloud.client import CloudEnricher
+
+            cloud_enricher = CloudEnricher(
+                profile=parsed.aws_profile,
+                region=parsed.aws_region,
+            )
+
+        # 4. Execute Analysis Pipeline
         pipeline = BlastRadiusPipeline()
         report = pipeline.run_analysis(
             raw_bytes,
             critical_resources=critical_set if critical_set else None,
+            cloud_enricher=cloud_enricher,
         )
 
         # 4. Format Output

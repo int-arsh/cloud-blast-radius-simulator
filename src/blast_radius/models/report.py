@@ -4,6 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
+from blast_radius.models.cloud import CloudEnrichmentReport
 from blast_radius.models.graph import DependencyEdge, ResourceNode
 from blast_radius.models.impact import ImpactAnalysisReport
 from blast_radius.models.risk import (
@@ -50,5 +51,8 @@ class FullAnalysisReport(BaseModel):
     warnings: list[str] = Field(default_factory=list, description="System and parser warnings")
     remediations: list[str] = Field(
         default_factory=list, description="Consolidated unique remediation recommendations"
+    )
+    cloud_enrichment: CloudEnrichmentReport | None = Field(
+        None, description="Optional correlated live cloud state and drift report"
     )
     metadata: dict[str, Any] = Field(default_factory=dict, description="Run metadata")

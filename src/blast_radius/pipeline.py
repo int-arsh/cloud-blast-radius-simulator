@@ -5,9 +5,11 @@ import uuid
 from datetime import UTC, datetime
 
 from blast_radius import __version__
+from blast_radius.cloud.client import CloudEnricher
 from blast_radius.config import get_settings
 from blast_radius.graph.builder import DependencyGraph
 from blast_radius.impact.analyzer import ImpactAnalyzer
+from blast_radius.models.cloud import CloudEnrichmentReport
 from blast_radius.models.impact import ImpactAnalysisReport
 from blast_radius.models.report import FullAnalysisReport
 from blast_radius.models.risk import (
@@ -38,6 +40,7 @@ class BlastRadiusPipeline:
         self,
         content: bytes | str,
         critical_resources: set[str] | None = None,
+        cloud_enricher: CloudEnricher | None = None,
     ) -> FullAnalysisReport:
         """Execute complete analysis pipeline from raw plan payload."""
         run_id = f"sim-{uuid.uuid4().hex[:12]}"
@@ -80,11 +83,38 @@ class BlastRadiusPipeline:
             critical_resources=critical_resources,
         )
 
-        # Step 6: Compile Full Report
+        # Step 6: Live Cloud State Enrichment (Optional, Safe Read-Only)
+        enrichment_report: CloudEnrichmentReport | None = None
+        decision_status = evaluation.decision_status
+        decision_reason = evaluation.decision_reason
+
+        if cloud_enricher is not None:
+            enrichment_report = cloud_enricher.enrich_plan(parsed_plan)
+            # Elevate PASS to REVIEW_REQUIRED if live safeguards or production violations detected
+            if enrichment_report.production_violations:
+                if decision_status == DecisionStatus.PASS:
+                    decision_status = DecisionStatus.REVIEW_REQUIRED
+                    decision_reason = (
+                        "Live cloud safeguard violation: planned destructive change targeting "
+                        "live production-tagged resource."
+                    )
+            elif enrichment_report.protection_warnings and decision_status == DecisionStatus.PASS:
+                decision_status = DecisionStatus.REVIEW_REQUIRED
+                decision_reason = (
+                    "Live cloud safeguards active: deletion/termination protection enabled on "
+                    "resources slated for destroy/replacement."
+                )
+
+        # Step 7: Compile Full Report
         unique_remediations = sorted({f.remediation for f in evaluation.findings})
-        all_warnings = sorted(
-            set(parsed_plan.warnings + impact_report.missing_information_warnings)
-        )
+        all_warnings_list = list(parsed_plan.warnings + impact_report.missing_information_warnings)
+        if enrichment_report:
+            all_warnings_list.extend(enrichment_report.protection_warnings)
+            all_warnings_list.extend(enrichment_report.production_violations)
+            for state in enrichment_report.resource_states.values():
+                all_warnings_list.extend(state.drift_messages)
+
+        all_warnings = sorted(set(all_warnings_list))
 
         resource_counts = {
             "total": graph_stats.total_nodes,
@@ -107,8 +137,8 @@ class BlastRadiusPipeline:
             engine_version=__version__,
             format_version=parsed_plan.format_version,
             terraform_version=parsed_plan.terraform_version,
-            decision_status=evaluation.decision_status,
-            decision_reason=evaluation.decision_reason,
+            decision_status=decision_status,
+            decision_reason=decision_reason,
             risk_score=evaluation.risk_score,
             score_breakdown=evaluation.score_breakdown,
             resource_counts=resource_counts,
@@ -121,6 +151,7 @@ class BlastRadiusPipeline:
             findings=evaluation.findings,
             warnings=all_warnings,
             remediations=unique_remediations,
+            cloud_enrichment=enrichment_report,
             metadata={
                 "environment": settings.environment,
                 "cycles_detected": len(graph_stats.cycles) > 0,

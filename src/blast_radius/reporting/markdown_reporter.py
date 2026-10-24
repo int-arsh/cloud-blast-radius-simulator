@@ -120,8 +120,32 @@ class MarkdownReporter:
                 lines.append(f"- {warn}")
             lines.append("")
 
-        # 7. Actionable Next Steps
-        lines.append("## 6. Recommended Next Steps")
+        # 7. Live Cloud State & Safeguards (Optional)
+        if report.cloud_enrichment:
+            ce = report.cloud_enrichment
+            auth_str = "Authenticated" if ce.authenticated else "Offline / Simulation"
+            lines.append("## 6. Live Cloud State & Safeguards (Read-Only)")
+            reg = ce.region or "us-east-1"
+            lines.append(f"- **Target Provider:** `{ce.provider.upper()}` (Region: `{reg}`)")
+            lines.append(f"- **Authentication Status:** `{auth_str}`")
+            lines.append(
+                f"- **Resources Checked:** {ce.resources_checked} "
+                f"(Existing: {ce.resources_existing}, Missing: {ce.resources_missing}, "
+                f"Drift: {ce.drift_count})"
+            )
+            if ce.protection_warnings:
+                lines.append("### Active Protection Safeguards")
+                for w in ce.protection_warnings:
+                    lines.append(f"- :warning: {w}")
+            if ce.production_violations:
+                lines.append("### Live Production Safeguard Violations")
+                for v in ce.production_violations:
+                    lines.append(f"- :x: {v}")
+            lines.append("")
+
+        # 8. Actionable Next Steps
+        step_num = 7 if report.cloud_enrichment else 6
+        lines.append(f"## {step_num}. Recommended Next Steps")
         if report.decision_status.value == "blocked":
             lines.append(
                 "- **DO NOT APPLY:** Resolve all CRITICAL findings and obtain security approval."

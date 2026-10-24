@@ -28,7 +28,7 @@ blast-radius analyze <path_to_plan.json> [OPTIONS]
 
 | Flag | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `--fail-on` | `blocked` \| `review_required` \| `never` | `blocked` | Gate failure sensitivity. `blocked` halts only on CRITICAL findings or score $\ge 80$. `review_required` halts on any HIGH severity finding or downstream impact. `never` always returns `0` (report-only mode). |
+| `--fail-on` | `blocked` \| `review_required` \| `never` | `blocked` | Gate failure sensitivity. `blocked` halts only on CRITICAL findings or score ≥ 80. `review_required` halts on any HIGH severity finding or downstream impact. `never` always returns `0` (report-only mode). |
 | `--max-score` | `float` | `None` | Explicit maximum allowable risk score (0.0 to 100.0). Breaching triggers exit `1`. |
 | `--critical` | `string` | `[]` | Designate specific resource addresses as critical (e.g. `--critical aws_db_instance.primary`). Modifying or deleting these triggers `RULE-001` (CRITICAL / BLOCKED). |
 | `--format` | `summary` \| `markdown` \| `json` | `summary` | Output format. `summary` emits colored ANSI terminal output. `markdown` emits a full PR comment. `json` emits sanitized structured JSON. |
