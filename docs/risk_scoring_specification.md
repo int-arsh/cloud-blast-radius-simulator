@@ -7,9 +7,9 @@ All safety rules are deterministic: identical plans evaluated with identical con
 | Rule ID | Rule Name | Trigger Criteria | Severity | Actionable Remediation |
 | :--- | :--- | :--- | :--- | :--- |
 | **`RULE-001`** | **Critical Resource Deletion** | Proposes deletion of a resource present in `critical_resources` config or tagged `Environment=production` / `Criticality=critical`. | `CRITICAL` | Obtain change advisory board approval or preserve the resource. |
-| **`RULE-002`** | **Destruction with Dependents** | Proposes deletion of a resource where `direct_dependents_count > 0`. | `HIGH` (or `CRITICAL` if direct dependents $\ge 3$) | Decouple or migrate downstream dependents prior to destruction. |
+| **`RULE-002`** | **Destruction with Dependents** | Proposes deletion of a resource where `direct_dependents_count > 0`. | `HIGH` (or `CRITICAL` if direct dependents ≥ 3) | Decouple or migrate downstream dependents prior to destruction. |
 | **`RULE-003`** | **Replacement with Dependents** | Proposes replacement (`replace`) of a resource with `total_impacted_count > 0`. | `HIGH` | Use `create_before_destroy = true` or plan a maintenance window. |
-| **`RULE-004`** | **Multiple Destructive Actions** | Two or more resources slated for destruction (`delete` or `replace`) in one plan. | `MEDIUM` (or `HIGH` if $\ge 5$) | Decompose large plans into smaller, incrementally verifiable pull requests. |
+| **`RULE-004`** | **Multiple Destructive Actions** | Two or more resources slated for destruction (`delete` or `replace`) in one plan. | `MEDIUM` (or `HIGH` if ≥ 5) | Decompose large plans into smaller, incrementally verifiable pull requests. |
 | **`RULE-005`** | **Protection Removal** | Disabling `deletion_protection` from `true` to `false` in planned changes. | `CRITICAL` | Re-enable deletion protection unless an intentional decommission is approved. |
 | **`RULE-006`** | **Sensitive Access Exposure** | Security group rule opening ingress to `0.0.0.0/0`. | `HIGH` | Restrict CIDR blocks to internal VPCs or designated bastion IPs. |
 | **`RULE-007`** | **Missing Dependency Evidence** | Destructive change where dependency evidence contains unmanaged or missing links. | `MEDIUM` | Inspect live infrastructure or upstream modules to verify all dependencies. |
@@ -22,7 +22,9 @@ All safety rules are deterministic: identical plans evaluated with identical con
 The simulator employs a deterministic, transparent formula. It explicitly differentiates **Severity**, **Blast Radius**, and **Evidence Confidence**:
 
 ### A. Severity Base Score
-$$\text{Base Score} = \sum_{\text{finding} \in \text{Findings}} \text{Weight}(\text{severity})$$
+```text
+Base Score = sum(Weight(finding.severity) for finding in findings)
+```
 
 Where weights are defined as:
 - `CRITICAL`: 40.0
@@ -33,13 +35,17 @@ Where weights are defined as:
 
 ### B. Blast Radius Multiplier
 Scales the base score based on total unique downstream impacted resources:
-$$\text{Multiplier} = \min\left(2.5,\, 1.0 + (\text{total\_impacted\_resources} \times 0.15)\right)$$
+```text
+Multiplier = min(2.5, 1.0 + (total_impacted_resources * 0.15))
+```
 
 ### C. Evidence Confidence Factor
-Averages confidence multipliers across findings ($1.0$ for `VERIFIED`, $0.85$ for `MEDIUM`, $0.70$ for `LOW`).
+Averages confidence multipliers across findings (1.0 for `VERIFIED`, 0.85 for `MEDIUM`, 0.70 for `LOW`).
 
 ### D. Final Bounded Score
-$$\text{Final Score} = \min\left(100.0,\, \max\left(0.0,\, \text{round}(\text{Base Score} \times \text{Multiplier} \times \text{Confidence Factor},\, 1)\right)\right)$$
+```text
+Final Score = min(100.0, max(0.0, round(Base Score * Multiplier * Confidence Factor, 1)))
+```
 
 ---
 
@@ -47,13 +53,13 @@ $$\text{Final Score} = \min\left(100.0,\, \max\left(0.0,\, \text{round}(\text{Ba
 
 - **`BLOCKED`**:
   - Any finding with `CRITICAL` severity (e.g. critical resource deletion, protection removal, invalid plan), **OR**
-  - Final risk score $\ge 80.0$.
+  - Final risk score ≥ 80.0.
 - **`REVIEW_REQUIRED`**:
   - Any finding with `HIGH` severity (e.g. security group open to 0.0.0.0/0, resource replacement impacting dependents), **OR**
   - Destructive change with downstream dependents, **OR**
-  - Final risk score $\ge 30.0$.
+  - Final risk score ≥ 30.0.
 - **`PASS`**:
-  - Safe to apply. No critical or high risks, score $< 30.0$.
+  - Safe to apply. No critical or high risks, score < 30.0.
 - **`ANALYSIS_INCOMPLETE`**:
   - Top-level parsing errors, malformed JSON, or unanalyzable plan structure.
 
