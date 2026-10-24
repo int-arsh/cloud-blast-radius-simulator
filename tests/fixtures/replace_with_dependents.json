@@ -1,0 +1,67 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_subnet.private_app",
+      "mode": "managed",
+      "type": "aws_subnet",
+      "name": "private_app",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete", "create"],
+        "before": {
+          "id": "subnet-0a1b2c3d",
+          "cidr_block": "10.0.1.0/24",
+          "availability_zone": "us-east-1a"
+        },
+        "after": {
+          "cidr_block": "10.0.10.0/24",
+          "availability_zone": "us-east-1a"
+        },
+        "replace_paths": [["cidr_block"]]
+      }
+    },
+    {
+      "address": "aws_instance.app",
+      "mode": "managed",
+      "type": "aws_instance",
+      "name": "app",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["no-op"],
+        "before": {
+          "id": "i-0123456789abcdef0",
+          "instance_type": "t3.medium"
+        },
+        "after": {
+          "id": "i-0123456789abcdef0",
+          "instance_type": "t3.medium"
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_subnet.private_app",
+          "mode": "managed",
+          "type": "aws_subnet",
+          "name": "private_app"
+        },
+        {
+          "address": "aws_instance.app",
+          "mode": "managed",
+          "type": "aws_instance",
+          "name": "app",
+          "expressions": {
+            "subnet_id": {
+              "references": ["aws_subnet.private_app.id"]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

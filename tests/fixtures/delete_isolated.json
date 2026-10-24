@@ -1,0 +1,33 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_cloudwatch_log_group.dev_debug",
+      "mode": "managed",
+      "type": "aws_cloudwatch_log_group",
+      "name": "dev_debug",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "name": "/aws/dev/debug",
+          "retention_in_days": 7
+        },
+        "after": null
+      }
+    }
+  ],
+  "configuration": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_cloudwatch_log_group.dev_debug",
+          "mode": "managed",
+          "type": "aws_cloudwatch_log_group",
+          "name": "dev_debug"
+        }
+      ]
+    }
+  }
+}

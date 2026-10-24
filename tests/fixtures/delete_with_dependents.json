@@ -1,0 +1,90 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.primary",
+      "mode": "managed",
+      "type": "aws_db_instance",
+      "name": "primary",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["delete"],
+        "before": {
+          "identifier": "prod-mysql-primary",
+          "instance_class": "db.r6g.xlarge",
+          "engine": "mysql",
+          "allocated_storage": 100,
+          "deletion_protection": false
+        },
+        "after": null
+      }
+    },
+    {
+      "address": "aws_ecs_service.api",
+      "mode": "managed",
+      "type": "aws_ecs_service",
+      "name": "api",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["no-op"],
+        "before": {
+          "name": "api-service",
+          "desired_count": 3
+        },
+        "after": {
+          "name": "api-service",
+          "desired_count": 3
+        }
+      }
+    },
+    {
+      "address": "aws_route53_record.db",
+      "mode": "managed",
+      "type": "aws_route53_record",
+      "name": "db",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["no-op"],
+        "before": {
+          "name": "db.prod.internal",
+          "type": "CNAME"
+        },
+        "after": {
+          "name": "db.prod.internal",
+          "type": "CNAME"
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_db_instance.primary",
+          "mode": "managed",
+          "type": "aws_db_instance",
+          "name": "primary"
+        },
+        {
+          "address": "aws_ecs_service.api",
+          "mode": "managed",
+          "type": "aws_ecs_service",
+          "name": "api",
+          "depends_on": ["aws_db_instance.primary"]
+        },
+        {
+          "address": "aws_route53_record.db",
+          "mode": "managed",
+          "type": "aws_route53_record",
+          "name": "db",
+          "expressions": {
+            "records": {
+              "references": ["aws_db_instance.primary.endpoint"]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

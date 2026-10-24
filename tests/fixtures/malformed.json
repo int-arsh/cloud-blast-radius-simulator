@@ -1,0 +1,9 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_instance.broken",
+      "change": {
+        "actions": ["create"]
+      // SYNTAX ERROR: UNCLOSED OBJECT

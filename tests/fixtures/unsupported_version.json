@@ -1,0 +1,18 @@
+{
+  "format_version": "99.0",
+  "terraform_version": "99.0.0",
+  "resource_changes": [
+    {
+      "address": "aws_s3_bucket.future",
+      "mode": "managed",
+      "type": "aws_s3_bucket",
+      "name": "future",
+      "change": {
+        "actions": ["create"],
+        "after": {
+          "bucket": "future-bucket"
+        }
+      }
+    }
+  ]
+}

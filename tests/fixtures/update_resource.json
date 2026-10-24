@@ -1,0 +1,42 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_security_group_rule.allow_tls",
+      "mode": "managed",
+      "type": "aws_security_group_rule",
+      "name": "allow_tls",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "type": "ingress",
+          "from_port": 443,
+          "to_port": 443,
+          "protocol": "tcp",
+          "cidr_blocks": ["10.0.0.0/16"]
+        },
+        "after": {
+          "type": "ingress",
+          "from_port": 443,
+          "to_port": 443,
+          "protocol": "tcp",
+          "cidr_blocks": ["0.0.0.0/0"]
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_security_group_rule.allow_tls",
+          "mode": "managed",
+          "type": "aws_security_group_rule",
+          "name": "allow_tls"
+        }
+      ]
+    }
+  }
+}

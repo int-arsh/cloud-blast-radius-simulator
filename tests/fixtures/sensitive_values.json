@@ -1,0 +1,38 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_db_instance.database",
+      "mode": "managed",
+      "type": "aws_db_instance",
+      "name": "database",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": {
+          "identifier": "prod-db",
+          "master_password": "PlainTextOldPassword123!",
+          "api_token": "live_tok_9988776655"
+        },
+        "after": {
+          "identifier": "prod-db",
+          "master_password": "PlainTextNewPassword456!",
+          "api_token": "live_tok_1122334455"
+        }
+      }
+    }
+  ],
+  "configuration": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_db_instance.database",
+          "mode": "managed",
+          "type": "aws_db_instance",
+          "name": "database"
+        }
+      ]
+    }
+  }
+}

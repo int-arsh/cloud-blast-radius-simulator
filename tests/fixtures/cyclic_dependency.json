@@ -1,0 +1,50 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_security_group.sg_a",
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "sg_a",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": {"name": "sg-a"},
+        "after": {"name": "sg-a-modified"}
+      }
+    },
+    {
+      "address": "aws_security_group.sg_b",
+      "mode": "managed",
+      "type": "aws_security_group",
+      "name": "sg_b",
+      "provider_name": "registry.terraform.io/hashicorp/aws",
+      "change": {
+        "actions": ["update"],
+        "before": {"name": "sg-b"},
+        "after": {"name": "sg-b-modified"}
+      }
+    }
+  ],
+  "configuration": {
+    "root_module": {
+      "resources": [
+        {
+          "address": "aws_security_group.sg_a",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "sg_a",
+          "depends_on": ["aws_security_group.sg_b"]
+        },
+        {
+          "address": "aws_security_group.sg_b",
+          "mode": "managed",
+          "type": "aws_security_group",
+          "name": "sg_b",
+          "depends_on": ["aws_security_group.sg_a"]
+        }
+      ]
+    }
+  }
+}

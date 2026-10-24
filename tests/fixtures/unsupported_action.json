@@ -1,0 +1,18 @@
+{
+  "format_version": "1.2",
+  "terraform_version": "1.5.7",
+  "resource_changes": [
+    {
+      "address": "aws_instance.weird",
+      "mode": "managed",
+      "type": "aws_instance",
+      "name": "weird",
+      "change": {
+        "actions": ["bogus_action"],
+        "after": {
+          "instance_type": "t3.micro"
+        }
+      }
+    }
+  ]
+}

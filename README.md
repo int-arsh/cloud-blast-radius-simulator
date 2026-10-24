@@ -13,6 +13,8 @@ Cloud Blast-Radius Simulator analyzes proposed infrastructure changes (e.g., Ter
 - **Evidence-Backed Findings**: Every finding links affected resources, change actions, triggering rules, confidence, and remediations.
 - **Safe Execution**: Read-only evaluation — never executes `terraform apply` or alters live cloud resources.
 
+For details on supported plan structures, see [Terraform Plan Support Specification](docs/terraform_plan_support.md).
+
 ## Quickstart
 
 ### Prerequisites
