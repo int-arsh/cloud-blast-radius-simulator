@@ -9,6 +9,7 @@ from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from blast_radius.api.routes import router
 from blast_radius.config import get_settings
 from blast_radius.logging import setup_logging
 
@@ -70,6 +71,9 @@ def create_app() -> FastAPI:
             "environment": settings.environment,
             "timestamp": datetime.now(UTC).isoformat(),
         }
+
+    # Mount API v1 router
+    app.include_router(router)
 
     return app
 
