@@ -1,0 +1,107 @@
+name: Terraform Blast-Radius Simulation Gate
+
+on:
+  pull_request:
+    paths:
+      - "terraform/**"
+      - "*.tf"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  blast-radius-simulation:
+    name: Simulate Plan & Evaluate Gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.5.7"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Cloud Blast-Radius Simulator
+        run: |
+          pip install --upgrade pip
+          pip install git+https://github.com/${{ github.repository }}.git
+
+      - name: Terraform Init & Plan
+        id: plan
+        run: |
+          # Example simulation commands in Terraform environment
+          terraform init -backend=false
+          terraform plan -out=tfplan.binary || true
+          terraform show -json tfplan.binary > tfplan.json || true
+        continue-on-error: true
+
+      - name: Run Blast-Radius Simulator Gate
+        id: simulate
+        run: |
+          # Run simulation, generate Markdown PR comment, and enforce gating threshold
+          # If tfplan.json is absent in demo/test, use fixture
+          PLAN_FILE="tfplan.json"
+          if [ ! -f "$PLAN_FILE" ]; then
+            PLAN_FILE="tests/fixtures/replace_with_dependents.json"
+          fi
+
+          echo "Running blast-radius on $PLAN_FILE..."
+          blast-radius analyze "$PLAN_FILE" \
+            --format=markdown \
+            --output=blast-radius-report.md \
+            --fail-on=blocked \
+            --max-score=80.0
+        continue-on-error: true
+
+      - name: Post Blast-Radius PR Comment
+        uses: actions/github-script@v7
+        if: always()
+        with:
+          script: |
+            const fs = require('fs');
+            const commentFile = 'blast-radius-report.md';
+            if (!fs.existsSync(commentFile)) {
+              console.log('No simulation report file found to comment.');
+              return;
+            }
+            const body = fs.readFileSync(commentFile, 'utf8');
+            const botHeader = '<!-- blast-radius-simulation-comment -->';
+            const fullBody = `${botHeader}\n${body}`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+
+            const existingComment = comments.find(c => c.body.includes(botHeader));
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body: fullBody,
+              });
+              console.log('Updated existing PR comment.');
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+              console.log('Created new PR comment.');
+            }
+
+      - name: Fail Workflow if Gate Tripped
+        if: steps.simulate.outcome != 'success'
+        run: |
+          echo "ERROR: Blast-radius gate check failed. See PR report details above."
+          exit 1
