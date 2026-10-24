@@ -14,6 +14,7 @@ Cloud Blast-Radius Simulator analyzes proposed infrastructure changes (e.g., Ter
 - **Safe Execution**: Read-only evaluation — never executes `terraform apply` or alters live cloud resources.
 
 For details on supported plan structures, see [Terraform Plan Support Specification](docs/terraform_plan_support.md).
+For safety rules, scoring formulas, and CI/CD thresholds, see [Risk Rules & Scoring Specification](docs/risk_scoring_specification.md).
 
 ## Quickstart
 
